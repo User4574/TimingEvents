@@ -1,6 +1,9 @@
 module TimingEvents
 	class InvalidStateError < Exception; end
 	class ImmutableSignalError < Exception; end
+	class ResetVectorReadError < Exception; end
+	class AssertedVectorWrittenError < Exception; end
+	class NilVectorAssertedError < Exception; end
 
 	class Signal
 		def initialize(a)
@@ -31,6 +34,44 @@ module TimingEvents
 
 		def reset
 			raise ImmutableSignalError
+		end
+	end
+
+	class VectorSignal < Signal
+		def initialize(*args)
+			if args.size == 0
+				@state = :reset
+				@value = nil
+			elsif args.size == 1
+				@state = :asserted
+				@value = args[0]
+			else
+				raise ArgumentError
+			end
+		end
+
+		def assert
+			if @value != nil
+				@state = :asserted
+			else
+				raise NilVectorAssertedError
+			end
+		end
+
+		def vector
+			if asserted?
+				return @value
+			else
+				raise ResetVectorReadError
+			end
+		end
+
+		def vector=(v)
+			if asserted?
+				raise AssertedVectorWrittenError
+			else
+				@value = v
+			end
 		end
 	end
 
